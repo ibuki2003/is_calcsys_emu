@@ -85,6 +85,8 @@ code {
 
     #io {
       code {
+        max-height: 10em;
+        overflow-y: auto;
         display: block;
         padding: 0.5em;
         border-radius: 0.2em;
