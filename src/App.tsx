@@ -174,9 +174,9 @@ function App() {
       </div>
       <div>
         <h2>説明</h2>
+        <p><a href="https://github.com/ibuki2003/is_calcsys_emu">GitHub Repo</a></p>
         <p>
           「計算機システム」の「机上計算機」のシミュレーターです。
-          <b>コンディションコードの動作を実装していません。</b>
         </p>
         <p>
           命令セットは資料の通り。<br />
@@ -187,6 +187,7 @@ function App() {
           未実装・実装予定の機能:
         </p>
         <ul>
+          <li><b>コンディションコードの動作の詳細が不明のため未実装</b></li>
           <li>ラベル</li>
           <li>Memory Mapに色をつける (お絵描きがしたい)</li>
           <li>命令拡張</li>
