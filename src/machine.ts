@@ -1,4 +1,4 @@
-import { AsmInstruction, decode, encode } from "./asm";
+import { decode, encode } from "./asm";
 
 export type Instruction = (
   | { op: "nop" }
@@ -23,7 +23,7 @@ export type Instruction = (
   | { imm: number }
 );
 
-const FLAG_V = 1;
+// const FLAG_V = 1;
 const FLAG_C = 2;
 const FLAG_Z = 4;
 const FLAG_N = 8;
