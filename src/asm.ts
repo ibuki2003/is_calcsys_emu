@@ -22,7 +22,7 @@ function parseCnd(cnd: string): number {
   throw new Error("invalid condition name");
 }
 
-function parseNumber(s: string): number {
+function parseNumber(s: string): number | null {
   if (s.startsWith("0x")) return parseInt(s.slice(2), 16);
   if (s.endsWith("h")) return parseInt(s.slice(0, -1), 16);
 
@@ -35,16 +35,18 @@ function parseNumber(s: string): number {
 
   if (/^-?\d+$/.test(s)) return parseInt(s);
 
-  throw new Error("invalid number format");
+  if (/^'.'$/.test(s)) return s.charCodeAt(1);
+
+  return null;
 }
 
 function parseImm(s: string): AsmImm {
   if (s == "") throw new Error("invalid immediate value");
-  if (!/^[0-9]/.test(s)) {
-    return { imm_label: s };
-  }
 
   const v = parseNumber(s);
+  if (v == null) {
+    return { imm_label: s };
+  }
   return { imm: v & 0xff };
 }
 
