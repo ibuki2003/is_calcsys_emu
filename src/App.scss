@@ -78,11 +78,13 @@ code {
         max-height: 30em;
       }
       tr.running-row { background: rgba(#0f0, 20%); }
+      tr.highlight-lnk:not(.running-row) { background: rgba(#00f, 20%); }
     }
 
     #memorymap {
-      table td.zero {
-        opacity: 0.6;
+      table {
+        td.zero { opacity: 0.6; }
+        td.highlight { background: rgba(#0f0, 20%); }
       }
     }
 

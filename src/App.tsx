@@ -32,6 +32,7 @@ function App() {
 
   const [_rendertoken, rerender] = useReducer(x => x + 1, 0);
 
+  const [highlights, setHighlights] = useState<number>(0);
 
   const [speed, setSpeed] = useState(500);
   const [running, setRunning] = useState<boolean>(false);
@@ -141,6 +142,24 @@ function App() {
             <small>interval in ms. negative value to super fast</small>
           </p>
 
+          <h3>Hightlight reg</h3>
+          <p>
+            {['R0', 'R1', 'R2', 'R3', 'LNK'].map((name, i) => (
+              <>
+                <input type="checkbox" onChange={e => {
+                  if (e.target.checked) {
+                    setHighlights(h => h | (1 << i));
+                  } else {
+                    setHighlights(h => h & ~(1 << i));
+                  }
+                }} checked={(highlights & (1 << i)) != 0} key={i} id={`highlight_${name}_check`} />
+                <label htmlFor={`highlight_${i}_check`}>{name}</label>
+              </>
+            ))}
+          </p>
+
+
+
         </div>
         <div id="machine">
           <section id="program">
@@ -148,13 +167,17 @@ function App() {
             <div className="scroll">
               <table>
                 <tbody>
-                  {machine.program.map((inst, i) => (
-                    <tr key={i} className={i === machine.pc ? "running-row" : ""}>
-                      <th>{i}</th>
-                      <td>{encode(inst)}</td>
-                      <td>{instToString(inst)}</td>
-                    </tr>
-                  ))}
+                  {machine.program.map((inst, i) => {
+                    const classes = [];
+                    if (i === machine.pc) classes.push("running-row");
+                    if (highlights & (1 << 4) && machine.lnk === i) classes.push("highlight-lnk");
+                    return (
+                      <tr key={i} className={classes.join(" ")}>
+                        <th>{i}</th>
+                        <td>{encode(inst)}</td>
+                        <td>{instToString(inst)}</td>
+                      </tr>
+                    )})}
                 </tbody>
               </table>
             </div>
@@ -189,9 +212,15 @@ function App() {
                     <th>{i.toString(16)}0</th>
                     {Array.from({length: 16}, (_, j) => {
                       const value = machine.memory[i * 16 + j];
+                      const classes = [];
+                      if (value === 0) classes.push("zero");
+
+                      for (let k = 0; k < 4; k++) {
+                        if ((highlights & (1 << k)) && machine.regs[k] === i * 16 + j) classes.push("highlight");
+                      }
                       return (<td
                         key={j}
-                        className={value === 0 ? "zero" : ""}
+                        className={classes.join(" ")}
                       >
                         {value.toString(16).padStart(2, "0")}
                       </td>);
