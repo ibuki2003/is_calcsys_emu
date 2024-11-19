@@ -32,14 +32,23 @@ function App() {
 
   const [_rendertoken, rerender] = useReducer(x => x + 1, 0);
 
-  const step = () => {
-    machine.step();
-    rerender();
-  };
-
 
   const [speed, setSpeed] = useState(500);
-  const [running, setRunning] = useState<number | null>(null);
+  const [running, setRunning] = useState<boolean>(false);
+
+  const step = () => {
+    try {
+      machine.step();
+      rerender();
+      setTimeout(step, speed);
+    } catch (e) {
+      if (running) {
+        setRunning(false);
+      }
+      alert(e);
+    }
+  };
+
 
   return (
     <>
@@ -75,7 +84,13 @@ function App() {
           >start / reset</button>
 
           <button
-            onClick={step}
+            onClick={() => {
+              try {
+                step();
+              } catch (e) {
+                alert(e);
+              }
+            }}
           >step</button>
 
           <p>
@@ -84,20 +99,22 @@ function App() {
               min={1}
               max={10000}
               value={speed}
-              disabled={running !== null}
+              disabled={running}
               onChange={e => setSpeed(parseInt(e.target.value))}
             />
-            {running === null ? (
+            {!running ? (
               <button
                 onClick={() => {
-                  setRunning(setInterval(step, speed));
+                  setRunning(true);
+                  step(); // start immediately
                 }}
               >start</button>
             ) : (
               <button
                 onClick={() => {
-                  clearInterval(running);
-                  setRunning(null);
+                  // clearInterval(running);
+                  // setRunning(null);
+                  setRunning(false);
                 }}
               >stop</button>
             )}

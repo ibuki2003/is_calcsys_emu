@@ -24,7 +24,7 @@ export type Instruction = (
 );
 
 export class Machine {
-  program: AsmInstruction[] = [];
+  program: Instruction[] = [];
   progmem: string[] = [];
   memory: number[] = new Array(256).fill(0);
   pc = 0;
@@ -65,9 +65,7 @@ export class Machine {
   step(): void {
     const bin = this.progmem[this.pc];
     if (bin === undefined) {
-      // console.warn("out of program");
-      alert("out of program");
-      return;
+      throw new Error("out of program");
     }
     const inst = decode(bin);
 
@@ -116,7 +114,7 @@ export class Machine {
       case "st":
         this.memory[(this.regs[inst.reg2] - inst.ofs) & 0xff] = this.regs[inst.reg1];
     }
-    this.pc = (this.pc + 1) % this.progmem.length;
+    this.pc += 1;
   }
 }
 

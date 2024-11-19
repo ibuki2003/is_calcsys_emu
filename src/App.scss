@@ -35,11 +35,17 @@ code {
       min-height: 100%;
       display: flex;
 
-      textarea {
-        resize: none;
-        flex: 1;
+      textarea, div {
+        padding-top: .3em;
+        padding-bottom: .3em;
         font-size: 1rem;
+        font-family: monospace;
         line-height: 1.2;
+      }
+
+      textarea {
+        flex: 1;
+        resize: none;
         min-height: 100%;
         overflow: hidden;
       }
@@ -48,10 +54,7 @@ code {
         height: 100%;
         padding-left: .5em;
         padding-bottom: 1em;
-        flex: 1;
         white-space: pre;
-        font-size: 1rem;
-        line-height: 1.2;
       }
     }
   }
