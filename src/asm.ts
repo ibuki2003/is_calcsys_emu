@@ -23,21 +23,33 @@ function parseCnd(cnd: string): number {
 }
 
 function parseNumber(s: string): number | null {
-  if (s.startsWith("0x")) return parseInt(s.slice(2), 16);
-  if (s.endsWith("h")) return parseInt(s.slice(0, -1), 16);
+  let ret = null;
+  if (s.startsWith("0x"))
+    ret = parseInt(s.slice(2), 16);
+  else if (s.endsWith("h"))
+    ret = parseInt(s.slice(0, -1), 16);
 
-  if (s.startsWith("0b")) return parseInt(s.slice(2), 2);
-  if (s.endsWith("b")) return parseInt(s.slice(0, -1), 2);
+  else if (s.startsWith("0b"))
+    ret = parseInt(s.slice(2), 2);
+  else if (s.endsWith("b"))
+    ret = parseInt(s.slice(0, -1), 2);
 
-  if (s.startsWith('0')) return parseInt(s, 8);
-  if (s.startsWith('0o')) return parseInt(s.slice(2), 8);
-  if (s.endsWith('o')) return parseInt(s.slice(0, -1), 8);
+  else if (s.startsWith('0'))
+    ret = parseInt(s, 8);
+  else if (s.startsWith('0o'))
+    ret = parseInt(s.slice(2), 8);
+  else if (s.endsWith('o'))
+    ret = parseInt(s.slice(0, -1), 8);
 
-  if (/^-?\d+$/.test(s)) return parseInt(s);
+  else if (/^-?\d+$/.test(s))
+    ret = parseInt(s);
 
-  if (/^'.'$/.test(s)) return s.charCodeAt(1);
+  else if (/^'.'$/.test(s))
+    ret = s.charCodeAt(1);
 
-  return null;
+  if (ret == null) return null;
+  if (isNaN(ret)) return null;
+  return ret;
 }
 
 function parseImm(s: string): AsmImm {
@@ -52,9 +64,10 @@ function parseImm(s: string): AsmImm {
 
 const OFS_REGEX = /^-?(\d+)\[(\w+)\]$/;
 export function parseAsm(line: string): AsmInstruction[] {
-  line = line.trim().toLowerCase();
+  line = line.trim();
 
   if (line === "") return [];
+  if (line.startsWith(";")) return [];
 
   if (line.endsWith(":")) {
     return [{ label: line.slice(0, -1) }];
@@ -69,10 +82,13 @@ export function parseAsm(line: string): AsmInstruction[] {
   //   op = line.slice(0, pos);
   //   args = line.slice(pos + 1);
   // }
-  const op = pos === -1 ? line : line.slice(0, pos);
+  const op = (pos === -1 ? line : line.slice(0, pos)).toLowerCase();
   const args = pos === -1 ? "" : line.slice(pos + 1);
 
-  const argv = args.split(",").map(arg => arg.trim());
+  const argv = args.split(/\s*(?:,|('.'))\s*/)
+    .map(s => s?.trim())
+    .filter(Boolean)
+    .map(s => s.startsWith("'") ? s : s.toLowerCase());
 
   switch (op) {
     case "nop":
