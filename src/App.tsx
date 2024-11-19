@@ -1,6 +1,6 @@
 import { useMemo, useState, useReducer } from 'react'
 import './App.scss'
-import { assemble, encode, instToString } from './asm'
+import { parseAsm, encode, instToString, assemble } from './asm'
 import { Machine } from './machine';
 import xxd from './xxd';
 
@@ -21,7 +21,7 @@ function App() {
     const lines = program.split("\n");
     const prog = lines.map(line => {
       try {
-        return assemble(line);
+        return parseAsm(line);
       } catch (e) {
         hasError = true;
         return "error: " + (e as any).message;
@@ -54,6 +54,7 @@ function App() {
             ></textarea>
             <div style={{whiteSpace: "pre"}}>
               {prog.map(inst => (
+                inst === null ? "" :
               (typeof inst === "string")
                 ? inst
                 : inst.map(encode).join(" "))).join("\n") }
@@ -66,7 +67,8 @@ function App() {
           </p>
           <button
             onClick={() => {
-              machine.reset(prog.filter(x => typeof x !== "string").flat(), input);
+              const p = prog.filter(x => typeof x !== "string").flat();
+              machine.reset(assemble(p), input);
               rerender();
             }}
             disabled={hasError}

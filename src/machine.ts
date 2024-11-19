@@ -1,4 +1,4 @@
-import { decode, encode } from "./asm";
+import { AsmInstruction, decode, encode } from "./asm";
 
 export type Instruction = (
   | { op: "nop" }
@@ -20,10 +20,11 @@ export type Instruction = (
   | { op: "jlnkcnd", cnd: number, reg: number }
   | { op: "ld", reg1: number, reg2: number, ofs: number }
   | { op: "st", reg1: number, reg2: number, ofs: number }
+  | { imm: number }
 );
 
 export class Machine {
-  program: (Instruction | number)[] = [];
+  program: AsmInstruction[] = [];
   progmem: string[] = [];
   memory: number[] = new Array(256).fill(0);
   pc = 0;
@@ -38,7 +39,7 @@ export class Machine {
   constructor() {
   }
 
-  reset(program: (Instruction | number)[], input: string): void {
+  reset(program: Instruction[], input: string): void {
     this.pc = 0;
     this.flag = 0;
     this.lnk = 0;
@@ -50,7 +51,7 @@ export class Machine {
     this.output = [];
 
     this.program = program;
-    this.progmem = program.flatMap(encode);
+    this.progmem = program.map(encode).filter(Boolean) as string[];
   }
 
   __fetchInput(): number {
@@ -62,7 +63,6 @@ export class Machine {
   }
 
   step(): void {
-    console.log(this);
     const bin = this.progmem[this.pc];
     if (bin === undefined) {
       // console.warn("out of program");
@@ -70,6 +70,9 @@ export class Machine {
       return;
     }
     const inst = decode(bin);
+
+    // NOTE: unreachable
+    if ("imm" in inst) return;
 
     switch (inst.op) {
       case "nop": break;

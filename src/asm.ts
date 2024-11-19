@@ -1,5 +1,11 @@
 import { type Instruction } from "./machine";
 
+export type AsmImm = { imm: number } | { imm_label: string };
+
+export type AsmInstruction = Instruction
+  | AsmImm
+  | { label: string };
+
 function parseReg(reg: string): number {
   if (reg == "a" || reg == "00" || reg == "r0") return 0;
   if (reg == "b" || reg == "01" || reg == "r1") return 1;
@@ -16,11 +22,41 @@ function parseCnd(cnd: string): number {
   throw new Error("invalid condition name");
 }
 
+function parseNumber(s: string): number {
+  if (s.startsWith("0x")) return parseInt(s.slice(2), 16);
+  if (s.endsWith("h")) return parseInt(s.slice(0, -1), 16);
+
+  if (s.startsWith("0b")) return parseInt(s.slice(2), 2);
+  if (s.endsWith("b")) return parseInt(s.slice(0, -1), 2);
+
+  if (s.startsWith('0')) return parseInt(s, 8);
+  if (s.startsWith('0o')) return parseInt(s.slice(2), 8);
+  if (s.endsWith('o')) return parseInt(s.slice(0, -1), 8);
+
+  if (/^-?\d+$/.test(s)) return parseInt(s);
+
+  throw new Error("invalid number format");
+}
+
+function parseImm(s: string): AsmImm {
+  if (s == "") throw new Error("invalid immediate value");
+  if (!s.startsWith("0") && !s.endsWith("1")) {
+    return { imm_label: s };
+  }
+
+  const v = parseNumber(s);
+  return { imm: v & 0xff };
+}
+
 const OFS_REGEX = /^-?(\d+)\[(\w+)\]$/;
-export function assemble(line: string): [] | [Instruction, ...number[]] {
+export function parseAsm(line: string): AsmInstruction[] {
   line = line.trim().toLowerCase();
 
   if (line === "") return [];
+
+  if (line.endsWith(":")) {
+    return [{ label: line.slice(0, -1) }];
+  }
 
   const pos = line.indexOf(" ");
   // let op, args;
@@ -72,8 +108,8 @@ export function assemble(line: string): [] | [Instruction, ...number[]] {
     case "set":
       if (argv.length !== 2) throw new Error("invalid number of arguments");
       return [
-        { op: "set", reg: parseReg(argv[0])},
-        parseInt(argv[1]) & 0xff,
+        { op: "set", reg: parseReg(argv[0]) },
+        parseImm(argv[1]),
       ];
     case "mv":
       if (argv.length !== 2) throw new Error("invalid number of arguments");
@@ -106,12 +142,46 @@ export function assemble(line: string): [] | [Instruction, ...number[]] {
   }
 }
 
+// expand immediate values, and resolve labels
+export function assemble(inst: AsmInstruction[]): Instruction[] {
+  const labels = new Map<string, number>();
+  let real_addr = 0;
+  for (let i = 0; i < inst.length; i++) {
+    const j = inst[i];
+    if ("label" in j) {
+      labels.set(j.label, real_addr);
+    } else {
+      real_addr++;
+    }
+  }
+  for (let i = 0; i < inst.length; i++) {
+    const j = inst[i];
+    if ("imm_label" in j) {
+      const label = j.imm_label;
+      if (!labels.has(label)) throw new Error(`unresolved label ${label}`);
+      inst[i] = { imm: labels.get(label)! };
+    }
+  }
+  inst = inst.filter(j => !("label" in j));
+  return inst as Instruction[]; // safety: all imm_label are resolved
+}
+
 function bin(n: number, bits: number): string {
   return n.toString(2).padStart(bits, "0");
 }
 
-export function encode(inst: Instruction | number): string {
-  if (typeof inst === "number") return bin(inst, 8);
+export function encode(inst: AsmInstruction): string | null {
+  // if (typeof inst === "number") return [bin(inst, 8)];
+  if ("imm" in inst) {
+    return bin(inst.imm, 8);
+  }
+  if ("imm_label" in inst) {
+    return inst.imm_label;
+    // throw new Error("unresolved label");
+  }
+  if ("label" in inst) {
+    return null;
+  }
   switch (inst.op) {
     case "nop":     return "00000000";
     case "inc":     return "000001" + bin(inst.reg, 2);
@@ -175,8 +245,11 @@ export function decode(inst: string): Instruction {
   }
 }
 
-export function instToString(prog: Instruction | number): string {
-  if (typeof prog === "number") return `data ${prog}`;
+export function instToString(prog: Instruction): string {
+  if ("imm" in prog) {
+    return prog.imm.toString();
+  }
+
   switch (prog.op) {
     case "nop":     return "NOP";
     case "inc":     return `INC R${prog.reg}`;
@@ -189,7 +262,11 @@ export function instToString(prog: Instruction | number): string {
     case "lshft":   return `LSHFT R${prog.reg}`;
     case "rshft":   return `RSHFT R${prog.reg}`;
     case "and":     return `AND R${prog.reg}`;
-    case "set":     return `SET R${prog.reg}, <imm>`;
+    case "set":
+      if ("value" in prog)
+        return `SET R${prog.reg}, ${prog.value}`;
+      else
+        return `SET R${prog.reg}, <imm>`;
     case "mv":      return `MV R${prog.reg1}, R${prog.reg2}`;
     case "add":     return `ADD R${prog.reg1}, R${prog.reg2}`;
     case "sub":     return `SUB R${prog.reg1}, R${prog.reg2}`;
