@@ -1,4 +1,4 @@
-import { useMemo, useState, useReducer } from 'react'
+import { useMemo, useState, useReducer, useEffect } from 'react'
 import './App.scss'
 import { parseAsm, encode, instToString, assemble } from './asm'
 import { Machine } from './machine';
@@ -40,7 +40,6 @@ function App() {
     try {
       machine.step();
       rerender();
-      setTimeout(step, speed);
     } catch (e) {
       if (running) {
         setRunning(false);
@@ -48,6 +47,14 @@ function App() {
       alert(e);
     }
   };
+
+  useEffect(() => {
+    if (running) {
+      const timer = setInterval(step, speed);
+      return () => clearInterval(timer);
+    }
+  }, [running, speed]);
+
 
 
   return (
@@ -76,9 +83,13 @@ function App() {
           </p>
           <button
             onClick={() => {
-              const p = prog.filter(x => typeof x !== "string").flat();
-              machine.reset(assemble(p), input);
-              rerender();
+              try {
+                const p = prog.filter(x => typeof x !== "string").flat();
+                machine.reset(assemble(p), input);
+                rerender();
+              } catch (e) {
+                alert(e);
+              }
             }}
             disabled={hasError}
           >start / reset</button>
