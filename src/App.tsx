@@ -45,12 +45,20 @@ function App() {
         setRunning(false);
       }
       alert(e);
+      return false;
     }
+    return true;
   };
 
   useEffect(() => {
     if (running) {
-      const timer = setInterval(step, speed);
+      const itv = Math.max(1, speed);
+      const rpt = speed > 0 ? 1 : (-speed + 1);
+      const timer = setInterval(() => {
+        for (let i = 0; i < rpt; i++) {
+          if (!step()) break;
+        }
+      }, itv);
       return () => clearInterval(timer);
     }
   }, [running, speed]);
@@ -86,6 +94,7 @@ function App() {
               try {
                 const p = prog.filter(x => typeof x !== "string").flat();
                 machine.reset(assemble(p), input);
+                setRunning(false);
                 rerender();
               } catch (e) {
                 alert(e);
@@ -107,7 +116,7 @@ function App() {
           <p>
             <input
               type="number"
-              min={1}
+              min={-100}
               max={10000}
               value={speed}
               disabled={running}
@@ -129,6 +138,7 @@ function App() {
                 }}
               >stop</button>
             )}
+            <small>interval in ms. negative value to super fast</small>
           </p>
 
         </div>
