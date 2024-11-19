@@ -40,7 +40,7 @@ function parseNumber(s: string): number {
 
 function parseImm(s: string): AsmImm {
   if (s == "") throw new Error("invalid immediate value");
-  if (!s.startsWith("0") && !s.endsWith("1")) {
+  if (!/^[0-9]/.test(s)) {
     return { imm_label: s };
   }
 
